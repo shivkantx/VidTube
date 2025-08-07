@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 import { ApiError } from "../utils/ApiError.js";
 
 const errorHandler = (err, req, res, next) => {
@@ -14,12 +13,12 @@ const errorHandler = (err, req, res, next) => {
   }
 
   const response = {
-    ...error,
+    statusCode: error.statusCode,
     message: error.message,
-    ...ApiError(
-      process.env.NODE_ENV === "development" ? { stack: error.stack } : {}
-    ),
+    errors: error.errors || [],
+    ...(process.env.NODE_ENV === "development" ? { stack: error.stack } : {}),
   };
+
   return res.status(error.statusCode).json(response);
 };
 
