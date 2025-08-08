@@ -23,3 +23,5 @@ VidTube is a frontend React application leveraging the **YouTube Data API v3** t
 - **Firebase Authentication**
 
 ## 📁 Project Structure
+
+# valuing evevry feature in node
