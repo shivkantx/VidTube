@@ -86,10 +86,10 @@ Content-Type: multipart/form-data
 **Body Tab → form-data**
 | Key | Type | Value |
 |-----|------|-------|
-| `fullname` | Text | `John Doe` |
-| `email` | Text | `john@example.com` |
-| `username` | Text | `johndoe` |
-| `password` | Text | `securepass123` |
+| `fullname` | Text | `Shiv Kant` |
+| `email` | Text | `shiv@example.com` |
+| `username` | Text | `shivkant` |
+| `password` | Text | `mypassword123` |
 | `avatar` | **File** | 📁 Select image file |
 | `coverImage` | **File** | 📁 Select image file (optional) |
 
@@ -99,12 +99,12 @@ Content-Type: multipart/form-data
 {
   "statusCode": 200,
   "data": {
-    "_id": "66af0c9a2f9b5e1234567890",
-    "fullname": "John Doe",
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant",
     "avatar": "https://res.cloudinary.com/.../avatar.jpg",
     "coverImage": "https://res.cloudinary.com/.../cover.jpg",
-    "email": "john@example.com",
-    "username": "johndoe"
+    "email": "shiv@example.com",
+    "username": "shivkant"
   },
   "message": "🎉 User registered successfully!"
 }
@@ -126,8 +126,8 @@ Content-Type: multipart/form-data
 
 ```json
 {
-  "email": "john@example.com",
-  "password": "securepass123"
+  "email": "shiv@example.com",
+  "password": "mypassword123"
 }
 ```
 
@@ -144,8 +144,8 @@ Content-Type: application/json
 
 ```json
 {
-  "email": "john@example.com",
-  "password": "securepass123"
+  "email": "shiv@example.com",
+  "password": "mypassword123"
 }
 ```
 
@@ -156,11 +156,11 @@ Content-Type: application/json
   "statusCode": 200,
   "data": {
     "user": {
-      "_id": "66af0c9a2f9b5e1234567890",
-      "fullname": "John Doe",
+      "_id": "689b808c04b6c243512f63f3",
+      "fullname": "Shiv Kant",
       "avatar": "https://res.cloudinary.com/.../avatar.jpg",
-      "email": "john@example.com",
-      "username": "johndoe"
+      "email": "shiv@example.com",
+      "username": "shivkant"
     },
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -294,8 +294,8 @@ Content-Type: application/json
 
 ```json
 {
-  "oldpassword": "securepass123",
-  "newPassword": "newsecurepass456"
+  "oldpassword": "mypassword123",
+  "newPassword": "mynewpassword456"
 }
 ```
 
@@ -349,8 +349,8 @@ Content-Type: application/json
 
 ```json
 {
-  "fullname": "John Doe Updated",
-  "email": "john.new@example.com"
+  "fullname": "Shiv Kant Updated",
+  "email": "shiv.new@example.com"
 }
 ```
 
@@ -365,10 +365,10 @@ Content-Type: application/json
 {
   "statusCode": 200,
   "data": {
-    "_id": "66af0c9a2f9b5e1234567890",
-    "fullname": "John Doe Updated",
-    "email": "john.new@example.com",
-    "username": "johndoe",
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant Updated",
+    "email": "shiv.new@example.com",
+    "username": "shivkant",
     "avatar": "https://res.cloudinary.com/.../avatar.jpg"
   },
   "message": "✅ Account details updated successfully!"
@@ -413,10 +413,10 @@ Content-Type: multipart/form-data
 {
   "statusCode": 200,
   "data": {
-    "_id": "66af0c9a2f9b5e1234567890",
-    "fullname": "John Doe",
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant",
     "avatar": "https://res.cloudinary.com/.../new-avatar.jpg",
-    "username": "johndoe"
+    "username": "shivkant"
   },
   "message": "🖼️ Avatar updated successfully!"
 }
@@ -488,10 +488,10 @@ Authorization: Bearer <accessToken>
 {
   "statusCode": 200,
   "data": {
-    "_id": "66af0c9a2f9b5e1234567890",
-    "fullname": "John Doe",
-    "email": "john@example.com",
-    "username": "johndoe",
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant",
+    "email": "shiv@example.com",
+    "username": "shivkant",
     "avatar": "https://res.cloudinary.com/.../avatar.jpg",
     "coverImage": "https://res.cloudinary.com/.../cover.jpg"
   },
@@ -513,7 +513,7 @@ Authorization: Bearer <accessToken>
 ##### 📤 Example Request
 
 ```http
-GET http://localhost:8000/api/v1/users/channel/johndoe
+GET http://localhost:8000/api/v1/users/channel/shivkant
 Authorization: Bearer <accessToken>
 ```
 
@@ -521,7 +521,7 @@ Authorization: Bearer <accessToken>
 
 **Body Tab:** ❌ **No Body Required**  
 **URL:** ✅ **Path Parameter Required**  
-Replace `:username` with actual username: `johndoe`
+Replace `:username` with actual username: `shivkant`
 
 **Headers Tab:** ✅ **Authorization Required**
 | Key | Value |
@@ -534,9 +534,9 @@ Replace `:username` with actual username: `johndoe`
 {
   "statusCode": 200,
   "data": {
-    "_id": "66af0c9a2f9b5e1234567890",
-    "fullname": "John Doe",
-    "username": "johndoe",
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant",
+    "username": "shivkant",
     "avatar": "https://res.cloudinary.com/.../avatar.jpg",
     "coverImage": "https://res.cloudinary.com/.../cover.jpg",
     "subscriberCount": 1250,
