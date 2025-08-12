@@ -79,15 +79,19 @@ Most endpoints require **JWT Authentication** via:
 ```http
 POST http://localhost:8000/api/v1/users/register
 Content-Type: multipart/form-data
-
-📋 Form Data:
-fullname: John Doe
-email: john@example.com
-username: johndoe
-password: securepass123
-avatar: [📁 profile-pic.jpg]
-coverImage: [📁 cover-image.jpg]
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → form-data**
+| Key | Type | Value |
+|-----|------|-------|
+| `fullname` | Text | `John Doe` |
+| `email` | Text | `john@example.com` |
+| `username` | Text | `johndoe` |
+| `password` | Text | `securepass123` |
+| `avatar` | **File** | 📁 Select image file |
+| `coverImage` | **File** | 📁 Select image file (optional) |
 
 ##### ✅ Success Response
 
@@ -132,7 +136,13 @@ coverImage: [📁 cover-image.jpg]
 ```http
 POST http://localhost:8000/api/v1/users/login
 Content-Type: application/json
+```
 
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → raw → JSON**
+
+```json
 {
   "email": "john@example.com",
   "password": "securepass123"
@@ -179,6 +189,14 @@ POST http://localhost:8000/api/v1/users/logout
 Authorization: Bearer <accessToken>
 ```
 
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab:** ❌ **No Body Required**  
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
+
 ##### ✅ Success Response
 
 ```json
@@ -206,6 +224,23 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+##### 📤 Example Request
+
+```http
+POST http://localhost:8000/api/v1/users/refresh-token
+Content-Type: application/json
+```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → raw → JSON**
+
+```json
+{
+  "refreshToken": "{{refreshToken}}"
 }
 ```
 
@@ -245,6 +280,30 @@ Authorization: Bearer <accessToken>
 }
 ```
 
+##### 📤 Example Request
+
+```http
+POST http://localhost:8000/api/v1/users/change-password
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → raw → JSON**
+
+```json
+{
+  "oldpassword": "securepass123",
+  "newPassword": "newsecurepass456"
+}
+```
+
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
+
 ##### ✅ Success Response
 
 ```json
@@ -275,6 +334,30 @@ Authorization: Bearer <accessToken>
   "email": "john.new@example.com"
 }
 ```
+
+##### 📤 Example Request
+
+```http
+PATCH http://localhost:8000/api/v1/users/update-account
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → raw → JSON**
+
+```json
+{
+  "fullname": "John Doe Updated",
+  "email": "john.new@example.com"
+}
+```
+
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ##### ✅ Success Response
 
@@ -310,10 +393,19 @@ Authorization: Bearer <accessToken>
 PATCH http://localhost:8000/api/v1/users/update-avatar
 Authorization: Bearer <accessToken>
 Content-Type: multipart/form-data
-
-📋 Form Data:
-avatar: [📁 new-profile-pic.jpg]
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → form-data**
+| Key | Type | Value |
+|-----|------|-------|
+| `avatar` | **File** | 📁 Select new image file |
+
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ##### ✅ Success Response
 
@@ -348,10 +440,19 @@ avatar: [📁 new-profile-pic.jpg]
 PATCH http://localhost:8000/api/v1/users/update-cover
 Authorization: Bearer <accessToken>
 Content-Type: multipart/form-data
-
-📋 Form Data:
-coverImage: [📁 new-cover-image.jpg]
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab → form-data**
+| Key | Type | Value |
+|-----|------|-------|
+| `coverImage` | **File** | 📁 Select new cover image file |
+
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ---
 
@@ -372,6 +473,14 @@ coverImage: [📁 new-cover-image.jpg]
 GET http://localhost:8000/api/v1/users/current-user
 Authorization: Bearer <accessToken>
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab:** ❌ **No Body Required**  
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ##### ✅ Success Response
 
@@ -407,6 +516,17 @@ Authorization: Bearer <accessToken>
 GET http://localhost:8000/api/v1/users/channel/johndoe
 Authorization: Bearer <accessToken>
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab:** ❌ **No Body Required**  
+**URL:** ✅ **Path Parameter Required**  
+Replace `:username` with actual username: `johndoe`
+
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ##### ✅ Success Response
 
@@ -450,6 +570,14 @@ Authorization: Bearer <accessToken>
 GET http://localhost:8000/api/v1/users/watch-history
 Authorization: Bearer <accessToken>
 ```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab:** ❌ **No Body Required**  
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
 
 ##### ✅ Success Response
 
@@ -496,6 +624,36 @@ Authorization: Bearer <accessToken>
      "refreshToken": "{{refresh_from_login}}"
    }
    ```
+
+### 📋 Postman Body Configuration Quick Reference
+
+| Content Type    | Postman Body Tab    | Usage                                   |
+| --------------- | ------------------- | --------------------------------------- |
+| **JSON Data**   | `Body → raw → JSON` | Login, password change, account updates |
+| **File Upload** | `Body → form-data`  | Registration, avatar/cover updates      |
+| **No Body**     | `Body → none`       | GET requests, logout                    |
+
+### 🎯 **Step-by-Step Postman Setup:**
+
+#### For JSON Requests (Login, Updates):
+
+1. Select **Body** tab
+2. Choose **raw** option
+3. Select **JSON** from dropdown
+4. Paste JSON data in text area
+
+#### For File Uploads (Register, Avatar):
+
+1. Select **Body** tab
+2. Choose **form-data** option
+3. Add key-value pairs:
+   - Text fields: Set Type to **Text**
+   - File fields: Set Type to **File** → Click **Select Files**
+
+#### For GET Requests (Profile, History):
+
+1. **Body** tab: Select **none**
+2. **Headers** tab: Add Authorization header
 
 ### 📋 Common Headers Template
 
