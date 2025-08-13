@@ -316,6 +316,49 @@ Content-Type: application/json
 
 ---
 
+#### 👤 6. Get Current User
+
+> **Retrieve logged-in user's profile**
+
+|                   |                     |
+| ----------------- | ------------------- |
+| **Endpoint**      | `GET /current-user` |
+| **Auth Required** | ✅ Yes              |
+
+##### 📤 Example Request
+
+```http
+GET http://localhost:8000/api/v1/users/current-user
+Authorization: Bearer <accessToken>
+```
+
+##### 🎯 **Postman Body Configuration:**
+
+**Body Tab:** ❌ **No Body Required**  
+**Headers Tab:** ✅ **Authorization Required**
+| Key | Value |
+|-----|-------|
+| `Authorization` | `Bearer {{accessToken}}` |
+
+##### ✅ Success Response
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "_id": "689b808c04b6c243512f63f3",
+    "fullname": "Shiv Kant",
+    "email": "shiv@example.com",
+    "username": "shivkant",
+    "avatar": "https://res.cloudinary.com/.../avatar.jpg",
+    "coverImage": "https://res.cloudinary.com/.../cover.jpg"
+  },
+  "message": "📋 Current user details retrieved"
+}
+```
+
+---
+
 #### ✏️ 7. Update Account Details
 
 > **Modify user profile information**
@@ -457,49 +500,6 @@ Content-Type: multipart/form-data
 ---
 
 ### 📊 Profile & Data
-
-#### 👤 6. Get Current User
-
-> **Retrieve logged-in user's profile**
-
-|                   |                     |
-| ----------------- | ------------------- |
-| **Endpoint**      | `GET /current-user` |
-| **Auth Required** | ✅ Yes              |
-
-##### 📤 Example Request
-
-```http
-GET http://localhost:8000/api/v1/users/current-user
-Authorization: Bearer <accessToken>
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab:** ❌ **No Body Required**  
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
-
-```json
-{
-  "statusCode": 200,
-  "data": {
-    "_id": "689b808c04b6c243512f63f3",
-    "fullname": "Shiv Kant",
-    "email": "shiv@example.com",
-    "username": "shivkant",
-    "avatar": "https://res.cloudinary.com/.../avatar.jpg",
-    "coverImage": "https://res.cloudinary.com/.../cover.jpg"
-  },
-  "message": "📋 Current user details retrieved"
-}
-```
-
----
 
 #### 📺 10. Get User Channel Profile
 
