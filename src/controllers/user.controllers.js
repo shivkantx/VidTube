@@ -191,55 +191,59 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingrefreshToken = req.cookie.refreshToken || req.body.refreshToken;
+  // 1️⃣ Read refresh token from cookies or body
+  const incomingRefreshToken =
+    req.cookies?.refreshToken || req.body.refreshToken;
 
-  if (!incomingrefreshToken) {
-    throw new ApiError(401, "Refresh token is required");
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized request — No refresh token provided");
   }
 
   try {
-    const decodedToken = jwt.verify(
-      incomingrefreshToken,
+    // 2️⃣ Verify the refresh token
+    const decoded = jwt.verify(
+      incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    const user = await User.findById(decodedToken?._id);
-
+    // 3️⃣ Find user by decoded id
+    const user = await User.findById(decoded?._id);
     if (!user) {
-      throw new ApiError(401, "Invalid refresh token");
+      throw new ApiError(401, "Invalid refresh token — User not found");
     }
 
-    if (incomingrefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Invalid refresh token");
+    // 4️⃣ Match with the one stored in DB
+    if (incomingRefreshToken !== user.refreshToken) {
+      throw new ApiError(401, "Invalid refresh token — Does not match DB");
     }
 
-    const options = {
+    // 5️⃣ Generate new access & refresh tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      user._id
+    );
+
+    // 6️⃣ Send new tokens in cookies + response
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     };
-
-    const { accessToken, refreshToken: newRefreshToken } =
-      await generateAccessAndRefreshToken(user._id);
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            accessToken,
-            refreshToken: newRefreshToken,
-          },
-          "Access token refreshed successfully!"
-        )
-      );
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
+      .json({
+        success: true,
+        accessToken,
+        refreshToken,
+        message: "Access token refreshed successfully",
+      });
   } catch (error) {
-    throw new ApiError(
-      500,
-      " Something went wrong while refreshing access token"
-    );
+    if (error.name === "TokenExpiredError") {
+      throw new ApiError(401, "Refresh token expired — Please log in again");
+    }
+    throw new ApiError(401, "Invalid refresh token");
   }
 });
 
