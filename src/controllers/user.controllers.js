@@ -369,7 +369,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
-        foreignField: "chennel",
+        foreignField: "channel", // fixed spelling
         as: "subscribers",
       },
     },
@@ -378,16 +378,16 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
-        as: "subscribers",
+        as: "subscribedTo", // fixed name
       },
     },
     {
       $addFields: {
         subscribersCount: {
-          $size: "$subscribers",
+          $size: { $ifNull: ["$subscribers", []] },
         },
         channelsSubscribedToCount: {
-          $size: "$subscriberedTo",
+          $size: { $ifNull: ["$subscribedTo", []] },
         },
         isSubscribed: {
           $cond: {
@@ -399,7 +399,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       },
     },
     {
-      // Project only the neccesary data
       $project: {
         fullname: 1,
         username: 1,
@@ -419,7 +418,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .channel[0].json(
+    .json(
       new ApiResponse(200, channel[0], "Channel profile fetched successfully!")
     );
 });
