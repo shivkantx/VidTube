@@ -1,346 +1,73 @@
-# 🎬 VidTube User Controller API Documentation
+## 📋 Complete API Commands Table
 
-> **A comprehensive guide to VidTube's User Management API**  
-> _Complete with examples, authentication, and best practices_
-
----
-
-## 📋 Table of Contents
-
-- [🚀 Quick Start](#-quick-start)
-- [🔐 Authentication](#-authentication)
-- [📌 API Endpoints](#-api-endpoints)
-  - [👤 User Registration & Auth](#-user-registration--auth)
-  - [⚙️ Account Management](#️-account-management)
-  - [📊 Profile & Data](#-profile--data)
-- [🛠️ Testing with Postman](#️-testing-with-postman)
-- [❌ Error Handling](#-error-handling)
-- [💡 Tips & Best Practices](#-tips--best-practices)
+| #      | Operation               | HTTP Method | Endpoint                          | Auth Required    | Content Type          | Operation Description               |
+| ------ | ----------------------- | ----------- | --------------------------------- | ---------------- | --------------------- | ----------------------------------- |
+| **1**  | **User Registration**   | `POST`      | `/api/v1/users/register`          | ❌ No            | `multipart/form-data` | Create new user account with avatar |
+| **2**  | **User Login**          | `POST`      | `/api/v1/users/login`             | ❌ No            | `application/json`    | Authenticate user and get tokens    |
+| **3**  | **User Logout**         | `POST`      | `/api/v1/users/logout`            | ✅ Yes           | -                     | End session and clear tokens        |
+| **4**  | **Refresh Token**       | `POST`      | `/api/v1/users/refresh`           | ⚠️ Refresh Token | `application/json`    | Get new access token                |
+| **5**  | **Change Password**     | `PATCH`     | `/api/v1/users/change-password`   | ✅ Yes           | `application/json`    | Update user password                |
+| **6**  | **Get Current User**    | `GET`       | `/api/v1/users/me`                | ✅ Yes           | -                     | Retrieve logged-in user profile     |
+| **7**  | **Update Account**      | `PATCH`     | `/api/v1/users/account`           | ✅ Yes           | `application/json`    | Update profile information          |
+| **8**  | **Update Avatar**       | `PATCH`     | `/api/v1/users/avatar`            | ✅ Yes           | `multipart/form-data` | Change profile picture              |
+| **9**  | **Update Cover Image**  | `PATCH`     | `/api/v1/users/cover-image`       | ✅ Yes           | `multipart/form-data` | Change cover/banner image           |
+| **10** | **Get Channel Profile** | `GET`       | `/api/v1/users/channel/:username` | ⚠️ Optional      | -                     | View public channel with stats      |
+| **11** | **Get Watch History**   | `GET`       | `/api/v1/users/history`           | ✅ Yes           | -                     | Retrieve user's video history       |
 
 ---
 
-## 🚀 Quick Start
+# VidTube User API Documentation
 
-### Base URL
+## 🚀 Base Configuration
 
-```
-🌐 http://localhost:8000/api/v1/users
-```
+- **Base URL**: `http://localhost:8000`
+- **API Prefix**: `/api/v1`
+- **Database**: MongoDB/Mongoose
+- **Authentication**: JWT (access/refresh tokens)
+- **Token Storage**: httpOnly cookies + Bearer header support
 
-### 📦 Content Types
+## 🔐 Authentication System
 
-| Type                  | Usage                           |
-| --------------------- | ------------------------------- |
-| `application/json`    | 📄 Text data, login, updates    |
-| `multipart/form-data` | 📁 File uploads (avatar, cover) |
+### Token Management
 
----
+- **Access Token**: Short-lived, for API requests
+- **Refresh Token**: Long-lived, for token renewal
+- **Storage**: httpOnly cookies (secure in production)
+- **Fallback**: Authorization Bearer header
 
-## 🔐 Authentication
+### Content Types
 
-Most endpoints require **JWT Authentication** via:
+- **Standard Requests**: `application/json`
+- **File Uploads**: `multipart/form-data` (avatar, coverImage)
 
-| Method         | Description                           | Example                               |
-| -------------- | ------------------------------------- | ------------------------------------- |
-| 🔑 **Header**  | Bearer token in Authorization header  | `Authorization: Bearer <accessToken>` |
-| 🍪 **Cookies** | HTTP-only cookies (set automatically) | `accessToken`, `refreshToken`         |
+## 📚 API Endpoints
 
-> **💡 Pro Tip:** Tokens are automatically managed via cookies after login!
-
----
-
-## 📌 API Endpoints
-
-### 👤 User Registration & Auth
-
-#### 🆕 1. Register User
-
-> **Create a new user account with profile images**
-
-|                   |                       |
-| ----------------- | --------------------- |
-| **Endpoint**      | `POST /register`      |
-| **Content-Type**  | `multipart/form-data` |
-| **Auth Required** | ❌ No                 |
-
-##### 📥 Request Body
-
-| Field        | Type   | Required | Description            |
-| ------------ | ------ | -------- | ---------------------- |
-| `fullname`   | string | ✅       | User's full name       |
-| `email`      | string | ✅       | Valid email address    |
-| `username`   | string | ✅       | Unique username        |
-| `password`   | string | ✅       | User password          |
-| `avatar`     | file   | ✅       | Profile picture        |
-| `coverImage` | file   | ⭕       | Cover image (optional) |
-
-##### 📤 Example Request
+### 1. User Registration
 
 ```http
-POST http://localhost:8000/api/v1/users/register
-Content-Type: multipart/form-data
+POST /api/v1/users/register
 ```
 
-##### 🎯 **Postman Body Configuration:**
+**Authentication**: ❌ Not required
 
-**Body Tab → form-data**
-| Key | Type | Value |
-|-----|------|-------|
-| `fullname` | Text | `Shiv Kant` |
-| `email` | Text | `shiv@example.com` |
-| `username` | Text | `shivkant` |
-| `password` | Text | `mypassword123` |
-| `avatar` | **File** | 📁 Select image file |
-| `coverImage` | **File** | 📁 Select image file (optional) |
+**Content-Type**: `multipart/form-data`
 
-##### ✅ Success Response
+**Request Body**:
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `fullname` | string | ✅ Yes | User's full name |
+| `email` | string | ✅ Yes | Valid email address |
+| `username` | string | ✅ Yes | Will be lowercased |
+| `password` | string | ✅ Yes | Strong password required |
+| `avatar` | File | ✅ Yes | Profile image (mandatory) |
+| `coverImage` | File | ❌ No | Cover/banner image |
 
-```json
-{
-  "statusCode": 200,
-  "data": {
-    "_id": "689b808c04b6c243512f63f3",
-    "fullname": "Shiv Kant",
-    "avatar": "https://res.cloudinary.com/.../avatar.jpg",
-    "coverImage": "https://res.cloudinary.com/.../cover.jpg",
-    "email": "shiv@example.com",
-    "username": "shivkant"
-  },
-  "message": "🎉 User registered successfully!"
-}
-```
+**🎯 Postman Configuration:**
 
----
+- **Body Tab**: form-data
+- **Fields**: Add each field with appropriate type (Text/File)
 
-#### 🔓 2. Login User
-
-> **Authenticate user and receive access tokens**
-
-|                   |                    |
-| ----------------- | ------------------ |
-| **Endpoint**      | `POST /login`      |
-| **Content-Type**  | `application/json` |
-| **Auth Required** | ❌ No              |
-
-##### 📥 Request Body
-
-```json
-{
-  "email": "shiv@example.com",
-  "password": "mypassword123"
-}
-```
-
-##### 📤 Example Request
-
-```http
-POST http://localhost:8000/api/v1/users/login
-Content-Type: application/json
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab → raw → JSON**
-
-```json
-{
-  "email": "shiv@example.com",
-  "password": "mypassword123"
-}
-```
-
-##### ✅ Success Response
-
-```json
-{
-  "statusCode": 200,
-  "data": {
-    "user": {
-      "_id": "689b808c04b6c243512f63f3",
-      "fullname": "Shiv Kant",
-      "avatar": "https://res.cloudinary.com/.../avatar.jpg",
-      "email": "shiv@example.com",
-      "username": "shivkant"
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
-  "message": "🚀 User logged in successfully!"
-}
-```
-
-> **🍪 Cookies Set:** `accessToken` and `refreshToken` are automatically stored as HTTP-only cookies
-
----
-
-#### 🚪 3. Logout User
-
-> **End user session and clear tokens**
-
-|                   |                |
-| ----------------- | -------------- |
-| **Endpoint**      | `POST /logout` |
-| **Auth Required** | ✅ Yes         |
-
-##### 📤 Example Request
-
-```http
-POST http://localhost:8000/api/v1/users/logout
-Authorization: Bearer <accessToken>
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab:** ❌ **No Body Required**  
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
-
-```json
-{
-  "statusCode": 200,
-  "data": {},
-  "message": "👋 User logged out successfully!"
-}
-```
-
----
-
-#### 🔄 4. Refresh Access Token
-
-> **Get new tokens when access token expires**
-
-|                   |                       |
-| ----------------- | --------------------- |
-| **Endpoint**      | `POST /refresh-token` |
-| **Content-Type**  | `application/json`    |
-| **Auth Required** | ⭕ Refresh Token      |
-
-##### 📥 Request Body
-
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-##### 📤 Example Request
-
-```http
-POST http://localhost:8000/api/v1/users/refresh-token
-Content-Type: application/json
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab → raw → JSON**
-
-```json
-{
-  "refreshToken": "{{refreshToken}}"
-}
-```
-
-##### ✅ Success Response
-
-```json
-{
-  "statusCode": 200,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
-  "message": "🔄 Access token refreshed successfully!"
-}
-```
-
----
-
-### ⚙️ Account Management
-
-#### 🔒 5. Change Password
-
-> **Update user password securely**
-
-|                   |                         |
-| ----------------- | ----------------------- |
-| **Endpoint**      | `POST /change-password` |
-| **Content-Type**  | `application/json`      |
-| **Auth Required** | ✅ Yes                  |
-
-##### 📥 Request Body
-
-```json
-{
-  "oldpassword": "securepass123",
-  "newPassword": "newsecurepass456"
-}
-```
-
-##### 📤 Example Request
-
-```http
-POST http://localhost:8000/api/v1/users/change-password
-Authorization: Bearer <accessToken>
-Content-Type: application/json
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab → raw → JSON**
-
-```json
-{
-  "oldpassword": "mypassword123",
-  "newPassword": "mynewpassword456"
-}
-```
-
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
-
-```json
-{
-  "statusCode": 200,
-  "data": {},
-  "message": "🔐 Password changed successfully!"
-}
-```
-
----
-
-#### 👤 6. Get Current User
-
-> **Retrieve logged-in user's profile**
-
-|                   |                     |
-| ----------------- | ------------------- |
-| **Endpoint**      | `GET /current-user` |
-| **Auth Required** | ✅ Yes              |
-
-##### 📤 Example Request
-
-```http
-GET http://localhost:8000/api/v1/users/current-user
-Authorization: Bearer <accessToken>
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab:** ❌ **No Body Required**  
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
+**Success Response** (201 Created):
 
 ```json
 {
@@ -353,104 +80,265 @@ Authorization: Bearer <accessToken>
     "avatar": "https://res.cloudinary.com/.../avatar.jpg",
     "coverImage": "https://res.cloudinary.com/.../cover.jpg"
   },
-  "message": "📋 Current user details retrieved"
+  "message": "🎉 User registered successfully!"
+}
+```
+
+**📝 Notes**:
+
+- Avatar upload is mandatory
+- Failed registrations trigger automatic file cleanup
+- Files uploaded to Cloudinary
+
+---
+
+### 2. User Login
+
+```http
+POST /api/v1/users/login
+```
+
+**Authentication**: ❌ Not required
+
+**Content-Type**: `application/json`
+
+**Request Body**:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPass#123"
+  // Optional: "username": "handle"
+}
+```
+
+**Success Response** (200 OK):
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "user": {
+      "_id": "...",
+      "fullname": "...",
+      "email": "...",
+      "username": "...",
+      "avatar": "https://...",
+      "coverImage": ""
+    },
+    "accessToken": "...",
+    "refreshToken": "..."
+  },
+  "message": "User logged in successfully!"
+}
+```
+
+**📝 Notes**:
+
+- Sets httpOnly cookies: `accessToken`, `refreshToken`
+- Supports login with email OR username
+- Password validated server-side
+
+---
+
+### 3. User Logout
+
+```http
+POST /api/v1/users/logout
+```
+
+**Authentication**: ✅ Required
+
+**Behavior**:
+
+- Clears `user.refreshToken` in database
+- Clears `accessToken` and `refreshToken` cookies
+
+**Success Response** (200 OK):
+
+```json
+{
+  "statusCode": 200,
+  "data": {},
+  "message": "User logged out successfully!"
 }
 ```
 
 ---
 
-#### ✏️ 7. Update Account Details
-
-> **Modify user profile information**
-
-|                   |                         |
-| ----------------- | ----------------------- |
-| **Endpoint**      | `PATCH /update-account` |
-| **Content-Type**  | `application/json`      |
-| **Auth Required** | ✅ Yes                  |
-
-##### 📥 Request Body
-
-```json
-{
-  "fullname": "John Doe Updated",
-  "email": "john.new@example.com"
-}
-```
-
-##### 📤 Example Request
+### 4. Refresh Access Token
 
 ```http
-PATCH http://localhost:8000/api/v1/users/update-account
-Authorization: Bearer <accessToken>
-Content-Type: application/json
+POST /api/v1/users/refresh
 ```
 
-##### 🎯 **Postman Body Configuration:**
+**Authentication**: ⚠️ Requires valid refresh token
 
-**Body Tab → raw → JSON**
+**Content-Type**: `application/json`
+
+**Request Options**:
+
+- **Preferred**: Refresh token from cookies (automatic)
+- **Alternative**: JSON body with `refreshToken`
 
 ```json
 {
-  "fullname": "Shiv Kant Updated",
-  "email": "shiv.new@example.com"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
+**🎯 Postman Configuration:**
 
-##### ✅ Success Response
+- **Body Tab**: raw → JSON (if not using cookies)
+- **Cookies**: Ensure refreshToken cookie is present
+
+**Success Response** (200 OK):
+
+```json
+{
+  "success": true,
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "message": "🔄 Access token refreshed successfully"
+}
+```
+
+**📝 Notes**:
+
+- Validates against `REFRESH_TOKEN_SECRET`
+- Matches token with database record
+- Rotates both access and refresh tokens on success
+
+---
+
+### 5. Change Password
+
+```http
+PATCH /api/v1/users/change-password
+```
+
+**Authentication**: ✅ Required
+
+**Content-Type**: `application/json`
+
+**Request Body**:
+
+```json
+{
+  "oldpassword": "mypassword123",
+  "newPassword": "mynewpassword456"
+}
+```
+
+**🎯 Postman Configuration:**
+
+- **Body Tab**: raw → JSON
+- **Headers**: Authorization: Bearer {{accessToken}}
+
+**Success Response** (200 OK):
+
+```json
+{
+  "statusCode": 200,
+  "data": {},
+  "message": "🔐 Password changed successfully!"
+}
+```
+
+---
+
+### 6. Get Current User
+
+```http
+GET /api/v1/users/me
+```
+
+**Authentication**: ✅ Required
+
+**🎯 Postman Configuration:**
+
+- **Body Tab**: none
+- **Headers**: Authorization: Bearer {{accessToken}}
+
+**Success Response** (200 OK):
 
 ```json
 {
   "statusCode": 200,
   "data": {
     "_id": "689b808c04b6c243512f63f3",
-    "fullname": "Shiv Kant Updated",
-    "email": "shiv.new@example.com",
+    "fullname": "Shiv Kant",
+    "email": "shiv@example.com",
     "username": "shivkant",
-    "avatar": "https://res.cloudinary.com/.../avatar.jpg"
+    "avatar": "https://res.cloudinary.com/.../avatar.jpg",
+    "coverImage": "https://res.cloudinary.com/.../cover.jpg"
   },
-  "message": "✅ Account details updated successfully!"
+  "message": "📋 Current user details"
 }
 ```
 
 ---
 
-#### 🖼️ 8. Update Avatar
-
-> **Change profile picture**
-
-|                   |                        |
-| ----------------- | ---------------------- |
-| **Endpoint**      | `PATCH /update-avatar` |
-| **Content-Type**  | `multipart/form-data`  |
-| **Auth Required** | ✅ Yes                 |
-
-##### 📤 Example Request
+### 7. Update Account Details
 
 ```http
-PATCH http://localhost:8000/api/v1/users/update-avatar
-Authorization: Bearer <accessToken>
-Content-Type: multipart/form-data
+PATCH /api/v1/users/account
 ```
 
-##### 🎯 **Postman Body Configuration:**
+**Authentication**: ✅ Required
 
-**Body Tab → form-data**
-| Key | Type | Value |
-|-----|------|-------|
-| `avatar` | **File** | 📁 Select new image file |
+**Content-Type**: `application/json`
 
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
+**Request Body**:
 
-##### ✅ Success Response
+```json
+{
+  "fullname": "New Name",
+  "email": "new@example.com"
+}
+```
+
+**Success Response** (200 OK):
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "_id": "...",
+    "fullname": "New Name",
+    "email": "new@example.com",
+    "username": "...",
+    "avatar": "https://...",
+    "coverImage": ""
+  },
+  "message": "Account details updated successfully!"
+}
+```
+
+---
+
+### 8. Update User Avatar
+
+```http
+PATCH /api/v1/users/avatar
+```
+
+**Authentication**: ✅ Required
+
+**Content-Type**: `multipart/form-data`
+
+**Request Body**:
+| Field | Type | Required |
+|-------|------|----------|
+| `avatar` | File | ✅ Yes |
+
+**🎯 Postman Configuration:**
+
+- **Body Tab**: form-data
+- **Field**: avatar (File type) - Select new image file
+- **Headers**: Authorization: Bearer {{accessToken}}
+
+**Success Response** (200 OK):
 
 ```json
 {
@@ -467,68 +355,28 @@ Content-Type: multipart/form-data
 
 ---
 
-#### 🌄 9. Update Cover Image
-
-> **Change channel cover image**
-
-|                   |                       |
-| ----------------- | --------------------- |
-| **Endpoint**      | `PATCH /update-cover` |
-| **Content-Type**  | `multipart/form-data` |
-| **Auth Required** | ✅ Yes                |
-
-##### 📤 Example Request
+### 9. Update Cover Image
 
 ```http
-PATCH http://localhost:8000/api/v1/users/update-cover
-Authorization: Bearer <accessToken>
-Content-Type: multipart/form-data
+PATCH /api/v1/users/cover-image
 ```
 
-##### 🎯 **Postman Body Configuration:**
+**Authentication**: ✅ Required
 
-**Body Tab → form-data**
-| Key | Type | Value |
-|-----|------|-------|
-| `coverImage` | **File** | 📁 Select new cover image file |
+**Content-Type**: `multipart/form-data`
 
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
+**Request Body**:
+| Field | Type | Required |
+|-------|------|----------|
+| `coverImage` | File | ✅ Yes |
 
----
+**🎯 Postman Configuration:**
 
-### 📊 Profile & Data
+- **Body Tab**: form-data
+- **Field**: coverImage (File type) - Select new cover image
+- **Headers**: Authorization: Bearer {{accessToken}}
 
-#### 📺 10. Get User Channel Profile
-
-> **View public channel profile with stats**
-
-|                   |                          |
-| ----------------- | ------------------------ |
-| **Endpoint**      | `GET /channel/:username` |
-| **Auth Required** | ✅ Yes                   |
-
-##### 📤 Example Request
-
-```http
-GET http://localhost:8000/api/v1/users/channel/shivkant
-Authorization: Bearer <accessToken>
-```
-
-##### 🎯 **Postman Body Configuration:**
-
-**Body Tab:** ❌ **No Body Required**  
-**URL:** ✅ **Path Parameter Required**  
-Replace `:username` with actual username: `shivkant`
-
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
+**Success Response** (200 OK):
 
 ```json
 {
@@ -536,240 +384,256 @@ Replace `:username` with actual username: `shivkant`
   "data": {
     "_id": "689b808c04b6c243512f63f3",
     "fullname": "Shiv Kant",
-    "username": "shivkant",
-    "avatar": "https://res.cloudinary.com/.../avatar.jpg",
-    "coverImage": "https://res.cloudinary.com/.../cover.jpg",
-    "subscriberCount": 1250,
-    "channelsSubscribedToCount": 45,
-    "isSubscribed": false
+    "coverImage": "https://res.cloudinary.com/.../new-cover.jpg",
+    "username": "shivkant"
   },
-  "message": "📺 User channel profile fetched successfully!"
+  "message": "🌄 Cover image updated successfully!"
 }
 ```
 
-| Field                       | Description                              |
-| --------------------------- | ---------------------------------------- |
-| `subscriberCount`           | 👥 Number of subscribers                 |
-| `channelsSubscribedToCount` | 📺 Channels this user subscribes to      |
-| `isSubscribed`              | ✅/❌ Whether current user is subscribed |
+---
+
+### 10. Get User Channel Profile
+
+```http
+GET /api/v1/users/channel/:username
+```
+
+**Authentication**: ⚠️ Recommended (for accurate `isSubscribed` value)
+
+**URL Parameters**:
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `username` | string | ✅ Yes |
+
+**Success Response** (200 OK):
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "fullname": "...",
+    "username": "...",
+    "email": "...",
+    "avatar": "https://...",
+    "coverImage": "https://...",
+    "subscribersCount": 0,
+    "channelsSubscribedToCount": 0,
+    "isSubscribed": false
+  },
+  "message": "Channel profile fetched successfully!"
+}
+```
+
+**📝 Notes**:
+
+- Aggregates subscriber and subscription counts
+- `isSubscribed` checks if current user follows this channel
 
 ---
 
-#### 📺 11. Get Watch History
-
-> **Retrieve user's video viewing history**
-
-|                   |                      |
-| ----------------- | -------------------- |
-| **Endpoint**      | `GET /watch-history` |
-| **Auth Required** | ✅ Yes               |
-
-##### 📤 Example Request
+### 11. Get Watch History
 
 ```http
-GET http://localhost:8000/api/v1/users/watch-history
-Authorization: Bearer <accessToken>
+GET /api/v1/users/history
 ```
 
-##### 🎯 **Postman Body Configuration:**
+**Authentication**: ✅ Required
 
-**Body Tab:** ❌ **No Body Required**  
-**Headers Tab:** ✅ **Authorization Required**
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer {{accessToken}}` |
-
-##### ✅ Success Response
+**Success Response** (200 OK):
 
 ```json
 {
   "statusCode": 200,
   "data": [
     {
-      "_id": "video_id_1",
-      "title": "🎬 Amazing Tutorial Video",
-      "description": "Learn something awesome in this video...",
-      "thumbnail": "https://res.cloudinary.com/.../thumb1.jpg",
-      "duration": 300,
-      "views": 12500,
+      "title": "...",
+      "description": "...",
+      "thumbnail": "https://...",
+      "videoUrl": "https://...",
       "owner": {
-        "_id": "owner_id",
-        "fullname": "Content Creator",
-        "username": "creator123",
-        "avatar": "https://res.cloudinary.com/.../owner-avatar.jpg"
-      }
+        "fullname": "...",
+        "username": "...",
+        "avatar": "https://..."
+      },
+      "createdAt": "...",
+      "updatedAt": "..."
     }
   ],
-  "message": "📺 Watch history fetched successfully!"
+  "message": "Watch history fetched successfully!"
 }
 ```
 
-> **📅 Note:** Videos are returned in reverse chronological order (most recent first)
+**📝 Notes**:
+
+- Populates video owner information
+- Returns chronological watch history
 
 ---
 
-## 🛠️ Testing with Postman
+## 🛠️ Utilities & Dependencies
 
-### 🔧 Initial Setup
+### Token Management
 
-1. **🍪 Enable Cookies**
-   - Settings → General → ✅ "Send cookies with requests"
-   - Settings → General → ✅ "Automatically follow redirects"
+- `generateAccessToken()` - Creates JWT access tokens
+- `generateRefreshToken()` - Creates JWT refresh tokens
 
-2. **🌍 Environment Setup**
-   ```json
-   {
-     "baseUrl": "http://localhost:8000/api/v1/users",
-     "accessToken": "{{token_from_login}}",
-     "refreshToken": "{{refresh_from_login}}"
-   }
-   ```
+### File Management
 
-### 📋 Postman Body Configuration Quick Reference
+- `uploadOnCloudinary()` - Handles file uploads to Cloudinary
+- `deleteFromCloudinary()` - Removes files from Cloudinary
 
-| Content Type    | Postman Body Tab    | Usage                                   |
-| --------------- | ------------------- | --------------------------------------- |
-| **JSON Data**   | `Body → raw → JSON` | Login, password change, account updates |
-| **File Upload** | `Body → form-data`  | Registration, avatar/cover updates      |
-| **No Body**     | `Body → none`       | GET requests, logout                    |
+### Response Wrappers
 
-### 🎯 **Step-by-Step Postman Setup:**
-
-#### For JSON Requests (Login, Updates):
-
-1. Select **Body** tab
-2. Choose **raw** option
-3. Select **JSON** from dropdown
-4. Paste JSON data in text area
-
-#### For File Uploads (Register, Avatar):
-
-1. Select **Body** tab
-2. Choose **form-data** option
-3. Add key-value pairs:
-   - Text fields: Set Type to **Text**
-   - File fields: Set Type to **File** → Click **Select Files**
-
-#### For GET Requests (Profile, History):
-
-1. **Body** tab: Select **none**
-2. **Headers** tab: Add Authorization header
-
-### 📋 Common Headers Template
-
-```
-# For JSON requests
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-# For file uploads
-Authorization: Bearer {{accessToken}}
-Content-Type: multipart/form-data
-```
-
-### 🔄 Workflow Recommendations
-
-| Step | Action                     | Endpoint                   |
-| ---- | -------------------------- | -------------------------- |
-| 1️⃣   | Register new user          | `POST /register`           |
-| 2️⃣   | Login to get tokens        | `POST /login`              |
-| 3️⃣   | Save tokens to environment | Manual step                |
-| 4️⃣   | Test protected routes      | Any authenticated endpoint |
-| 5️⃣   | Refresh when expired       | `POST /refresh-token`      |
+- `ApiResponse` - Standardized success responses
+- `ApiError` - Standardized error responses
 
 ---
 
-## ❌ Error Handling
+## 📮 Postman Configuration
 
-### 📋 Standard Error Format
+### Collection Structure
 
-```json
-{
-  "statusCode": 400,
-  "data": null,
-  "message": "❌ Detailed error description",
-  "success": false
-}
+```
+📁 VidTube API
+├── 👤 Users
+│   ├── Register (multipart/form-data)
+│   ├── Login (JSON)
+│   ├── Refresh Token (JSON/cookies)
+│   ├── Logout
+│   ├── Get Current User (GET)
+│   ├── Change Password (JSON)
+│   ├── Update Account (JSON)
+│   ├── Update Avatar (multipart/form-data)
+│   ├── Update Cover Image (multipart/form-data)
+│   ├── Channel Profile (GET)
+│   └── Watch History (GET)
 ```
 
-### 🚨 Common Error Codes
+### Auto-Token Management (Tests Tab)
 
-| Code    | Type            | Description            | Example                    |
-| ------- | --------------- | ---------------------- | -------------------------- |
-| **400** | 🔴 Bad Request  | Invalid input data     | Missing required fields    |
-| **401** | 🟡 Unauthorized | Authentication failed  | Invalid/expired token      |
-| **404** | 🔵 Not Found    | Resource doesn't exist | User not found             |
-| **409** | 🟠 Conflict     | Duplicate data         | Username already exists    |
-| **500** | ⚫ Server Error | Internal server issues | Database connection failed |
-
-### 🛡️ Error Examples
-
-```json
-// 401 Unauthorized
-{
-  "statusCode": 401,
-  "message": "🔒 Access denied. Please login first.",
-  "success": false
-}
-
-// 409 Conflict
-{
-  "statusCode": 409,
-  "message": "⚠️ Username 'johndoe' is already taken.",
-  "success": false
-}
+```javascript
+const res = pm.response.json?.() || {};
+if (res.accessToken) pm.collectionVariables.set("accessToken", res.accessToken);
+if (res.refreshToken)
+  pm.collectionVariables.set("refreshToken", res.refreshToken);
+const user = res.data?.user || res.user || res.data;
+const id = user?._id || user?.id;
+if (id) pm.collectionVariables.set("userId", id);
 ```
+
+### Cookie Handling
+
+- Postman automatically stores cookies from `http://localhost:8000`
+- For protected routes, ensure cookies are present in requests
+- Alternative: Use `Authorization: Bearer <token>` header
 
 ---
 
-## 💡 Tips & Best Practices
+## 🗺️ Route Mapping
+
+| Controller Function     | HTTP Method | Route Path                 |
+| ----------------------- | ----------- | -------------------------- |
+| `registerUser`          | POST        | `/users/register`          |
+| `loginUser`             | POST        | `/users/login`             |
+| `logoutUser`            | POST        | `/users/logout`            |
+| `refreshAccessToken`    | POST        | `/users/refresh`           |
+| `changeCurrentPassword` | PATCH       | `/users/change-password`   |
+| `getCurrentUser`        | GET         | `/users/me`                |
+| `updateAccountDetails`  | PATCH       | `/users/account`           |
+| `updateUserAvatar`      | PATCH       | `/users/avatar`            |
+| `updateUserCoverImage`  | PATCH       | `/users/cover-image`       |
+| `getUserChannelProfile` | GET         | `/users/channel/:username` |
+| `getWatchHistory`       | GET         | `/users/history`           |
+
+---
+
+## 💡 Best Practices & Tips
 
 ### 🔐 Security Best Practices
 
-| ✅ **DO**               | ❌ **DON'T**                   |
-| ----------------------- | ------------------------------ |
-| Use HTTPS in production | Store tokens in localStorage   |
-| Validate input data     | Send passwords in GET requests |
-| Handle token expiration | Ignore error responses         |
-| Use strong passwords    | Hardcode credentials           |
+| ✅ **DO**                    | ❌ **DON'T**                   |
+| ---------------------------- | ------------------------------ |
+| Use HTTPS in production      | Store tokens in localStorage   |
+| Validate input data          | Send passwords in GET requests |
+| Handle token expiration      | Ignore error responses         |
+| Use strong passwords         | Hardcode credentials           |
+| Implement auto-refresh logic | Log sensitive data             |
 
 ### 🚀 Performance Tips
 
 - **📦 File Uploads**: Keep images under 5MB for better performance
-- **🔄 Token Management**: Implement automatic refresh logic
+- **🔄 Token Management**: Implement automatic refresh logic in frontend
 - **🎯 Pagination**: Use pagination for large datasets (watch history)
-- **🔍 Error Logging**: Log errors for debugging
+- **🔍 Error Logging**: Log errors for debugging and monitoring
+- **⚡ Caching**: Cache user profile data to reduce API calls
 
-### 📱 Frontend Integration
+### 📱 Frontend Integration Examples
+
+#### Auto-refresh token on 401
 
 ```javascript
-// Example: Auto-refresh token on 401
 const apiCall = async (endpoint, options) => {
   let response = await fetch(endpoint, options);
 
   if (response.status === 401) {
     // Auto-refresh token
     await refreshAccessToken();
-    // Retry original request
-    response = await fetch(endpoint, options);
+    // Retry original request with new token
+    response = await fetch(endpoint, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${newAccessToken}`,
+      },
+    });
   }
 
   return response.json();
 };
 ```
 
+#### File upload with progress
+
+```javascript
+const uploadFile = (file, endpoint) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  return fetch(endpoint, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+};
+```
+
+### 🎯 Testing Workflow
+
+| Step | Action                | Endpoint                 | Expected Result              |
+| ---- | --------------------- | ------------------------ | ---------------------------- |
+| 1️⃣   | Register new user     | `POST /register`         | User created, files uploaded |
+| 2️⃣   | Login to get tokens   | `POST /login`            | Tokens received and stored   |
+| 3️⃣   | Test current user     | `GET /me`                | User profile returned        |
+| 4️⃣   | Update profile        | `PATCH /account`         | Profile updated successfully |
+| 5️⃣   | Upload avatar         | `PATCH /avatar`          | New avatar URL returned      |
+| 6️⃣   | Check channel profile | `GET /channel/:username` | Channel stats visible        |
+| 7️⃣   | Test logout           | `POST /logout`           | Tokens cleared               |
+
 ---
 
 <div align="center">
 
-### 🎬 **VidTube API Documentation**
+### 🎬 **VidTube User API Documentation**
 
-_Made with ❤️ for developers_
+_Beautiful, comprehensive API documentation for developers_
 
-**📚 [More Docs](https://github.com/shivkantx/VidTube)** • **🐛 [Report Issue](https://github.com/shivkantx/VidTube/issues)** • **⭐ [Star on GitHub](https://github.com/shivkantx/VidTube)**
+**📚 [GitHub Repository](https://github.com/your-username/VidTube)** • **🐛 [Report Issues](https://github.com/your-username/VidTube/issues)** • **⭐ [Star Project](https://github.com/your-username/VidTube)**
 
 ---
 
-_Last updated: 2025 • Version: 1.0.0_
+_Last updated: August 2025 • Version: 1.0.0 • Made with ❤️ for developers_
 
 </div>
