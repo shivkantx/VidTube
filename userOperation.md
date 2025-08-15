@@ -1,3 +1,13 @@
+# VidTube User API Documentation
+
+## 🚀 Base Configuration
+
+- **Base URL**: `http://localhost:8000`
+- **API Prefix**: `/api/v1`
+- **Database**: MongoDB/Mongoose
+- **Authentication**: JWT (access/refresh tokens)
+- **Token Storage**: httpOnly cookies + Bearer header support
+
 ## 📋 Complete API Commands Table
 
 | #      | Operation               | HTTP Method | Endpoint                          | Auth Required    | Content Type          | Operation Description               |
@@ -15,16 +25,6 @@
 | **11** | **Get Watch History**   | `GET`       | `/api/v1/users/history`           | ✅ Yes           | -                     | Retrieve user's video history       |
 
 ---
-
-# VidTube User API Documentation
-
-## 🚀 Base Configuration
-
-- **Base URL**: `http://localhost:8000`
-- **API Prefix**: `/api/v1`
-- **Database**: MongoDB/Mongoose
-- **Authentication**: JWT (access/refresh tokens)
-- **Token Storage**: httpOnly cookies + Bearer header support
 
 ## 🔐 Authentication System
 
