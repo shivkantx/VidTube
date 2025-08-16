@@ -12,23 +12,21 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
   // TODO: implement fetching videos with pagination, filtering, sorting
-  res.json(
-    new ApiResponse(200, "Fetched all videos", {
-      page,
-      limit,
-      query,
-      sortBy,
-      sortType,
-      userId,
-    })
-  );
 });
 
 // PUBLISH a new video
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   // TODO: get uploaded video file from req.files or req.file
+  const file = req.file;
+
+  if (!file) {
+    throw new ApiError(400, "No video file provided");
+  }
   // TODO: upload video to Cloudinary
+  const uploadVideo = await uploadOnCloudinary(file.path, "viedos");
+  const newVideo = await Video.create({});
+
   // TODO: create video document in MongoDB
   res.json(new ApiResponse(201, "Video published successfully"));
 });
