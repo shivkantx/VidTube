@@ -8,7 +8,7 @@
 
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
-import { Video } from "./video.models";
+import { Video } from "./video.models.js";
 
 const likeSchema = new Schema(
   {
