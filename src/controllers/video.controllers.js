@@ -15,65 +15,55 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 // PUBLISH a new video
-const publishAVideo = asyncHandler(async (req, res) => {
-  // Safe body read for multipart/form-data
-  const body = req.body || {};
-  const title = body.title?.trim();
-  const description = body.description?.trim();
-
-  // Validation: Check required fields
-  if (!title || !description) {
-    throw new ApiError(400, "Title and description are required");
-  }
-
-  // Multer .fields puts files on req.files, not req.file
-  const videoPart = req.files?.videoFile?.[0] || null;
-
-  if (!videoPart) {
-    throw new ApiError(400, "No video file provided");
-  }
-
-  let uploadedVideo = null;
-
+const uploadVideo = async (req, res) => {
   try {
-    // Upload video to Cloudinary (adjust helper signature if needed)
-    uploadedVideo = await uploadOnCloudinary(videoPart.path, "videos");
+    const { title, description } = req.body;
 
-    // Support either secure_url or url depending on your helper
-    const videoUrl = uploadedVideo?.secure_url || uploadedVideo?.url;
-    const publicId = uploadedVideo?.public_id;
-
-    if (!videoUrl) {
-      throw new ApiError(500, "Failed to upload video to Cloudinary");
+    if (!req.files?.videoFile || !req.files?.thumbnail) {
+      return res
+        .status(400)
+        .json({ message: "Video file and thumbnail are required" });
     }
 
-    // Create video document (uses your field names)
+    // Upload to Cloudinary
+    const videoUpload = await uploadOnCloudinary(
+      req.files.videoFile[0].path,
+      "video"
+    );
+    const thumbnailUpload = await uploadOnCloudinary(
+      req.files.thumbnail[0].path,
+      "image"
+    );
+
+    if (!videoUpload || !thumbnailUpload) {
+      return res
+        .status(500)
+        .json({ message: "Failed to upload video or thumbnail" });
+    }
+
+    // Cloudinary returns duration for videos (in seconds)
+    const duration = videoUpload.duration || 0;
+
+    // Save to MongoDB
     const newVideo = await Video.create({
       title,
       description,
-      videoUrl, // your schema expects videoUrl
-      uploadedBy: req.user?._id, // your schema expects uploadedBy
+      videoFile: videoUpload.secure_url,
+      thumbnail: thumbnailUpload.secure_url,
+      duration, // ✅ set here
+      owner: req.user._id,
     });
 
-    return res
-      .status(201)
-      .json(new ApiResponse(201, newVideo, "Video published successfully"));
+    res.status(201).json({
+      success: true,
+      message: "Video uploaded successfully",
+      data: newVideo,
+    });
   } catch (error) {
-    console.error("Video publish error:", error);
-
-    // Cleanup uploaded asset if DB save fails
-    try {
-      const publicId = uploadedVideo?.public_id;
-      if (publicId) {
-        await deleteFromCloudinary(publicId);
-      }
-    } catch (_) {
-      // ignore cleanup errors
-    }
-
-    throw new ApiError(500, "Something went wrong while publishing the video");
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
-});
+};
 
 // GET video by ID
 const getVideoById = asyncHandler(async (req, res) => {
@@ -110,7 +100,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 export {
   getAllVideos,
-  publishAVideo,
+  uploadVideo,
   getVideoById,
   updateVideo,
   deleteVideo,
