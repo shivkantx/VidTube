@@ -16,19 +16,63 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 // PUBLISH a new video
 const publishAVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
-  // TODO: get uploaded video file from req.files or req.file
-  const file = req.file;
+  // Safe body read for multipart/form-data
+  const body = req.body || {};
+  const title = body.title?.trim();
+  const description = body.description?.trim();
 
-  if (!file) {
+  // Validation: Check required fields
+  if (!title || !description) {
+    throw new ApiError(400, "Title and description are required");
+  }
+
+  // Multer .fields puts files on req.files, not req.file
+  const videoPart = req.files?.videoFile?.[0] || null;
+
+  if (!videoPart) {
     throw new ApiError(400, "No video file provided");
   }
-  // TODO: upload video to Cloudinary
-  const uploadVideo = await uploadOnCloudinary(file.path, "viedos");
-  const newVideo = await Video.create({});
 
-  // TODO: create video document in MongoDB
-  res.json(new ApiResponse(201, "Video published successfully"));
+  let uploadedVideo = null;
+
+  try {
+    // Upload video to Cloudinary (adjust helper signature if needed)
+    uploadedVideo = await uploadOnCloudinary(videoPart.path, "videos");
+
+    // Support either secure_url or url depending on your helper
+    const videoUrl = uploadedVideo?.secure_url || uploadedVideo?.url;
+    const publicId = uploadedVideo?.public_id;
+
+    if (!videoUrl) {
+      throw new ApiError(500, "Failed to upload video to Cloudinary");
+    }
+
+    // Create video document (uses your field names)
+    const newVideo = await Video.create({
+      title,
+      description,
+      videoUrl, // your schema expects videoUrl
+      uploadedBy: req.user?._id, // your schema expects uploadedBy
+    });
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newVideo, "Video published successfully"));
+  } catch (error) {
+    console.error("Video publish error:", error);
+
+    // Cleanup uploaded asset if DB save fails
+    try {
+      const publicId = uploadedVideo?.public_id;
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    } catch (_) {
+      // ignore cleanup errors
+    }
+
+    throw new ApiError(500, "Something went wrong while publishing the video");
+  }
 });
 
 // GET video by ID
