@@ -3,7 +3,7 @@ import {
   deleteVideo,
   getAllVideos,
   getVideoById,
-  uploadVideo, // ✅ now using uploadVideo
+  uploadVideo,
   togglePublishStatus,
   updateVideo,
 } from "../controllers/video.controllers.js";
@@ -23,15 +23,21 @@ router.route("/upload").post(
     { name: "videoFile", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },
   ]),
-  uploadVideo // ✅ calling correct controller fn
+  uploadVideo
 );
 
-// Video operations with ID
+// Video operations with ID (GET, DELETE, PATCH)
 router
   .route("/:videoId")
   .get(getVideoById)
   .delete(deleteVideo)
-  .patch(upload.single("thumbnail"), updateVideo);
+  .patch(
+    upload.fields([
+      { name: "videoFile", maxCount: 1 }, // optional video update
+      { name: "thumbnail", maxCount: 1 }, // optional thumbnail update
+    ]),
+    updateVideo
+  );
 
 // Toggle publish status
 router.route("/toggle/publish/:videoId").patch(togglePublishStatus);

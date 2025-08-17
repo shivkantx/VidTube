@@ -66,7 +66,6 @@ const uploadVideo = async (req, res) => {
 };
 
 // GET video by ID
-
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
@@ -89,19 +88,132 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 // UPDATE video details
 const updateVideo = asyncHandler(async (req, res) => {
-  // fixed typo: upadteVideo -> updateVideo
   const { videoId } = req.params;
+  const { title, description } = req.body || {};
 
-  // TODO: update title, description, thumbnail, etc.
-  res.json(new ApiResponse(200, "Video updated", { videoId }));
+  const video = await Video.findById(videoId);
+  if (!video) throw new ApiError(404, "Video not found");
+
+  // Build update object
+  const updateFields = {};
+
+  if (title) updateFields.title = title;
+  if (description) updateFields.description = description;
+
+  // Handle file uploads
+  if (req.files?.thumbnail?.[0]) {
+    const thumbnailUpload = await uploadOnCloudinary(
+      req.files.thumbnail[0].path,
+      "image"
+    );
+    updateFields.thumbnail = thumbnailUpload.secure_url;
+  }
+
+  if (req.files?.videoFile?.[0]) {
+    const videoUpload = await uploadOnCloudinary(
+      req.files.videoFile[0].path,
+      "video"
+    );
+    updateFields.videoFile = videoUpload.secure_url;
+    updateFields.duration = videoUpload.duration || video.duration;
+  }
+
+  // Check if at least one field is being updated
+  if (Object.keys(updateFields).length === 0) {
+    throw new ApiError(400, "At least one field is required to update");
+  }
+
+  // Single database update
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    { $set: updateFields },
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Video updated successfully",
+    data: updatedVideo,
+  });
 });
 
 // DELETE a video
+// controllers/video.controller.js
+
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const userId = req.user?._id;
 
-  // TODO: delete video document from DB and remove from Cloudinary
-  res.json(new ApiResponse(200, "Video deleted", { videoId }));
+  // 1) Validate ID
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid video ID format");
+  }
+
+  // 2) Find video
+  const videoDoc = await Video.findById(videoId);
+  if (!videoDoc) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  // 3) Owner-only authorization
+  const isOwner = String(videoDoc.owner) === String(userId);
+  if (!isOwner) {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, "You are not the owner of this video"));
+  }
+
+  // 4) Determine Cloudinary public_ids
+  // Prefer stored public_id fields. If you only have URLs, derive public_id from URL.
+  const videoPid =
+    videoDoc.video?.public_id ||
+    publicIdFromUrl(
+      videoDoc.video?.url || videoDoc.videoFile || videoDoc.video
+    );
+
+  const thumbPid =
+    videoDoc.thumbnail?.public_id ||
+    publicIdFromUrl(videoDoc.thumbnail?.url || videoDoc.thumbnail);
+
+  const cloudinaryErrors = [];
+
+  // 5) Delete video asset (must specify resource_type:'video')
+  if (videoPid) {
+    const resV = await deleteFromCloudinary(videoPid, {
+      resource_type: "video",
+    });
+    if (resV?.result !== "ok" && resV?.result !== "not found") {
+      cloudinaryErrors.push(`video(${videoPid}): ${JSON.stringify(resV)}`);
+    }
+  }
+
+  // 6) Delete thumbnail asset (resource_type:'image')
+  if (thumbPid) {
+    const resT = await deleteFromCloudinary(thumbPid, {
+      resource_type: "image",
+    });
+    if (resT?.result !== "ok" && resT?.result !== "not found") {
+      cloudinaryErrors.push(`thumbnail(${thumbPid}): ${JSON.stringify(resT)}`);
+    }
+  }
+
+  // 7) Delete DB document
+  await videoDoc.deleteOne();
+
+  // 8) Response
+  const payload = { videoId: String(videoDoc._id) };
+  if (cloudinaryErrors.length) {
+    payload.cloudinaryErrors = cloudinaryErrors;
+    return res.json(
+      new ApiResponse(
+        200,
+        "Video deleted (with asset cleanup warnings)",
+        payload
+      )
+    );
+  }
+
+  return res.json(new ApiResponse(200, "Video deleted", payload));
 });
 
 // TOGGLE publish status
