@@ -66,11 +66,25 @@ const uploadVideo = async (req, res) => {
 };
 
 // GET video by ID
+
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  // TODO: fetch video by ID from DB
-  res.json(new ApiResponse(200, "Video fetched", { videoId }));
+  // Validate ObjectId
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  // Fetch video from DB by ID
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video fetched successfully"));
 });
 
 // UPDATE video details
