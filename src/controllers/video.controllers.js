@@ -139,47 +139,31 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 // DELETE a video
 
-const deleteVideo = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid video id" });
-    }
+const deleteVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
 
-    const video = await Video.findById(id);
-    if (!video) return res.status(404).json({ message: "Video not found" });
+  const video = await Video.findById(videoId);
+  if (!video) throw new ApiError(404, "Video not found");
 
-    if (String(video.owner) !== String(req.user._id)) {
-      return res.status(403).json({ message: "Not allowed" });
-    }
-
-    // Cloudinary cleanup (if you store public_ids)
-    const deletes = [];
-    if (video.cloudinaryVideoId) {
-      deletes.push(
-        cloudinary.uploader.destroy(video.cloudinaryVideoId, {
-          resource_type: "video",
-        })
-      );
-    }
-    if (video.cloudinaryThumbId) {
-      deletes.push(
-        cloudinary.uploader.destroy(video.cloudinaryThumbId, {
-          resource_type: "image",
-        })
-      );
-    }
-    if (deletes.length) {
-      await Promise.allSettled(deletes);
-    }
-
-    await video.deleteOne(); // or Video.findByIdAndDelete(id)
-    return res.status(200).json({ message: "Deleted" });
-  } catch (err) {
-    console.error("deleteVideo error", err);
-    return res.status(500).json({ message: "Server error" });
+  if (video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not authorized to delete this video");
   }
-};
+
+  // Delete from Cloudinary using stored public_id
+  if (video.videoFileId) {
+    await deleteFromCloudinary(video.videoFileId, "video");
+  }
+  if (video.thumbnailId) {
+    await deleteFromCloudinary(video.thumbnailId, "image");
+  }
+
+  // Delete DB entry
+  await Video.findByIdAndDelete(videoId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Video and files deleted successfully"));
+});
 
 // TOGGLE publish status
 const togglePublishStatus = asyncHandler(async (req, res) => {
