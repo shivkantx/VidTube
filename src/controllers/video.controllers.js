@@ -25,7 +25,7 @@ const uploadVideo = async (req, res) => {
         .json({ message: "Video file and thumbnail are required" });
     }
 
-    // Upload to Cloudinary using helper
+    // Upload to Cloudinary
     const videoUpload = await uploadOnCloudinary(
       req.files.videoFile[0].path,
       "video"
@@ -41,6 +41,7 @@ const uploadVideo = async (req, res) => {
         .json({ message: "Failed to upload video or thumbnail" });
     }
 
+    // Cloudinary returns duration for videos (in seconds)
     const duration = videoUpload.duration || 0;
 
     // Save to MongoDB
@@ -49,10 +50,8 @@ const uploadVideo = async (req, res) => {
       description,
       videoFile: videoUpload.secure_url,
       thumbnail: thumbnailUpload.secure_url,
-      duration,
+      duration, // ✅ set here
       owner: req.user._id,
-      videoPublicId: videoUpload.public_id,
-      thumbnailPublicId: thumbnailUpload.public_id,
     });
 
     res.status(201).json({
@@ -61,7 +60,7 @@ const uploadVideo = async (req, res) => {
       data: newVideo,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -142,33 +141,43 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const deleteVideo = async (req, res) => {
   try {
-    const { videoId } = req.params;
-
-    const video = await Video.findById(videoId);
-    if (!video) {
-      return res.status(404).json({ message: "Video not found" });
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid video id" });
     }
 
-    // Delete video file from Cloudinary
-    if (video.videoPublicId) {
-      await deleteFromCloudinary(video.videoPublicId, "video");
+    const video = await Video.findById(id);
+    if (!video) return res.status(404).json({ message: "Video not found" });
+
+    if (String(video.owner) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not allowed" });
     }
 
-    // Delete thumbnail from Cloudinary
-    if (video.thumbnailPublicId) {
-      await deleteFromCloudinary(video.thumbnailPublicId, "image");
+    // Cloudinary cleanup (if you store public_ids)
+    const deletes = [];
+    if (video.cloudinaryVideoId) {
+      deletes.push(
+        cloudinary.uploader.destroy(video.cloudinaryVideoId, {
+          resource_type: "video",
+        })
+      );
+    }
+    if (video.cloudinaryThumbId) {
+      deletes.push(
+        cloudinary.uploader.destroy(video.cloudinaryThumbId, {
+          resource_type: "image",
+        })
+      );
+    }
+    if (deletes.length) {
+      await Promise.allSettled(deletes);
     }
 
-    // Delete video record from DB
-    await Video.findByIdAndDelete(videoId);
-
-    res.status(200).json({
-      success: true,
-      message: "Video and associated files deleted successfully",
-    });
-  } catch (error) {
-    console.error("Delete error:", error);
-    res.status(500).json({ message: error.message });
+    await video.deleteOne(); // or Video.findByIdAndDelete(id)
+    return res.status(200).json({ message: "Deleted" });
+  } catch (err) {
+    console.error("deleteVideo error", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
