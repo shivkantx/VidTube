@@ -3,17 +3,20 @@ import { Video } from "../models/video.models.js";
 import { User } from "../models/user.models.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js"; // ✅ added deleteFromCloudinary
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 // GET all videos with optional filters, pagination, sorting
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-
   // TODO: implement fetching videos with pagination, filtering, sorting
 });
 
+// PUBLISH a new video
 // PUBLISH a new video
 const uploadVideo = async (req, res) => {
   try {
@@ -41,16 +44,19 @@ const uploadVideo = async (req, res) => {
         .json({ message: "Failed to upload video or thumbnail" });
     }
 
-    // Cloudinary returns duration for videos (in seconds)
-    const duration = videoUpload.duration || 0;
-
-    // Save to MongoDB
+    // Save to MongoDB with new schema format
     const newVideo = await Video.create({
       title,
       description,
-      videoFile: videoUpload.secure_url,
-      thumbnail: thumbnailUpload.secure_url,
-      duration, // ✅ set here
+      videoFile: {
+        url: videoUpload.secure_url,
+        public_id: videoUpload.public_id,
+      },
+      thumbnail: {
+        url: thumbnailUpload.secure_url,
+        public_id: thumbnailUpload.public_id,
+      },
+      duration: videoUpload.duration || 0,
       owner: req.user._id,
     });
 
@@ -69,17 +75,12 @@ const uploadVideo = async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  // Validate ObjectId
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(400, "Invalid video ID");
   }
 
-  // Fetch video from DB by ID
   const video = await Video.findById(videoId);
-
-  if (!video) {
-    throw new ApiError(404, "Video not found");
-  }
+  if (!video) throw new ApiError(404, "Video not found");
 
   return res
     .status(200)
@@ -94,36 +95,38 @@ const updateVideo = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId);
   if (!video) throw new ApiError(404, "Video not found");
 
-  // Build update object
   const updateFields = {};
 
   if (title) updateFields.title = title;
   if (description) updateFields.description = description;
 
-  // Handle file uploads
   if (req.files?.thumbnail?.[0]) {
+    // delete old thumbnail
+    if (video.thumbnailPublicId) {
+      await deleteFromCloudinary(video.thumbnailPublicId);
+    }
     const thumbnailUpload = await uploadOnCloudinary(
-      req.files.thumbnail[0].path,
-      "image"
+      req.files.thumbnail[0].path
     );
     updateFields.thumbnail = thumbnailUpload.secure_url;
+    updateFields.thumbnailPublicId = thumbnailUpload.public_id;
   }
 
   if (req.files?.videoFile?.[0]) {
-    const videoUpload = await uploadOnCloudinary(
-      req.files.videoFile[0].path,
-      "video"
-    );
+    // delete old video
+    if (video.videoFilePublicId) {
+      await deleteFromCloudinary(video.videoFilePublicId);
+    }
+    const videoUpload = await uploadOnCloudinary(req.files.videoFile[0].path);
     updateFields.videoFile = videoUpload.secure_url;
+    updateFields.videoFilePublicId = videoUpload.public_id;
     updateFields.duration = videoUpload.duration || video.duration;
   }
 
-  // Check if at least one field is being updated
   if (Object.keys(updateFields).length === 0) {
     throw new ApiError(400, "At least one field is required to update");
   }
 
-  // Single database update
   const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     { $set: updateFields },
@@ -138,7 +141,6 @@ const updateVideo = asyncHandler(async (req, res) => {
 });
 
 // DELETE a video
-
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
@@ -149,12 +151,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to delete this video");
   }
 
-  // Delete from Cloudinary using stored public_id
-  if (video.videoFileId) {
-    await deleteFromCloudinary(video.videoFileId, "video");
+  // Delete from Cloudinary using helper
+  if (video.videoFile?.public_id) {
+    await deleteFromCloudinary(video.videoFile.public_id, "video");
   }
-  if (video.thumbnailId) {
-    await deleteFromCloudinary(video.thumbnailId, "image");
+
+  if (video.thumbnail?.public_id) {
+    await deleteFromCloudinary(video.thumbnail.public_id, "image");
   }
 
   // Delete DB entry
@@ -168,9 +171,16 @@ const deleteVideo = asyncHandler(async (req, res) => {
 // TOGGLE publish status
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const video = await Video.findById(videoId);
 
-  // TODO: fetch video, toggle isPublished, save
-  res.json(new ApiResponse(200, "Publish status toggled", { videoId }));
+  if (!video) throw new ApiError(404, "Video not found");
+
+  video.isPublished = !video.isPublished;
+  await video.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Publish status toggled"));
 });
 
 export {
