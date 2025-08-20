@@ -6,17 +6,68 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
-} from "../utils/cloudinary.js"; // ✅ added deleteFromCloudinary
+} from "../utils/cloudinary.js"; // added deleteFromCloudinary
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 // GET all videos with optional filters, pagination, sorting
+// GET all videos with optional filters, pagination, sorting
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  // TODO: implement fetching videos with pagination, filtering, sorting
+  let {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  // Build filter object
+  const filter = {};
+  if (query) {
+    // text search in title or description
+    filter.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+
+  if (userId) {
+    filter.owner = userId;
+  }
+
+  // Build sort object
+  const sort = {};
+  sort[sortBy] = sortType.toLowerCase() === "asc" ? 1 : -1;
+
+  // Fetch videos with pagination
+  const videos = await Video.find(filter)
+    .sort(sort)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate("owner", "username email"); // populate owner info
+
+  const totalVideos = await Video.countDocuments(filter);
+  const totalPages = Math.ceil(totalVideos / limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Videos fetched successfully",
+    data: {
+      videos,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalVideos,
+      },
+    },
+  });
 });
 
-// PUBLISH a new video
 // PUBLISH a new video
 const uploadVideo = async (req, res) => {
   try {
