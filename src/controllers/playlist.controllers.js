@@ -3,11 +3,26 @@ import { Playlist } from "../models/playlist.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Video } from "../models/video.models.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
+  const userId = req.user._id;
 
-  //TODO: create playlist
+  if (!name) {
+    throw new ApiError(400, "Playlist name is required");
+  }
+
+  const playlist = await Playlist.create({
+    name,
+    description: description || "",
+    owner: userId,
+    Video: [],
+  });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, playlist, "Playlist created successfully"));
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
